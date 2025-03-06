@@ -1,0 +1,41 @@
+# Core numerical and data libraries
+numpy
+pandas
+scikit-learn
+scipy
+
+# Visualization (optional, but useful for plotting results)
+matplotlib
+seaborn
+
+# EEG data processing
+mne
+
+# Deep learning:
+# For Windows, use standard TensorFlow (ensure you install GPU or CPU version as needed).
+tensorflow         # GPU version requires NVIDIA GPU drivers, CUDA, and cuDNN.
+# Alternatively, you might consider PyTorch as another deep learning framework:
+# torch
+
+# scikeras wraps Keras models for scikit-learn compatibility.
+scikeras[tensorflow]
+
+# Hyperparameter optimization and progress display
+optuna
+tqdm
+
+# Bluetooth communication for data streaming (helpful for interfacing with STM32)
+bleak
+
+# Serial communication (if needed for other hardware connections)
+pyserial
+
+# Real-time data processing and enhanced visualization (optional)
+plotly
+bokeh
+
+# Jupyter Notebook and interactive development (optional)
+jupyterlab
+
+# For allowing triggers to be asserted during data acquisition
+keyboard
