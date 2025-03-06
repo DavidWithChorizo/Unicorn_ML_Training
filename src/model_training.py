@@ -1,9 +1,9 @@
 # model_training.py
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, DepthwiseConv2D, Activation, AveragePooling2D, Dropout, SeparableConv2D, Flatten, Dense
-from tensorflow.keras.constraints import max_norm
+from tensorflow.keras.models import Model # type: ignore
+from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, DepthwiseConv2D, Activation, AveragePooling2D, Dropout, SeparableConv2D, Flatten, Dense# type: ignore
+from tensorflow.keras.constraints import max_norm# type: ignore
 from scikeras.wrappers import KerasClassifier
 import optuna
 from sklearn.model_selection import GridSearchCV
@@ -143,3 +143,5 @@ def train_model_with_tuning(X_train, y_train, X_val, y_val, input_shape, nb_clas
     grid_result = grid_search_finetune(X_train, y_train, input_shape, nb_classes, epochs=50, batch_size=32, cv=3, refined_grid=refined_grid)
     
     return grid_result
+
+print("Model training script loaded.")
