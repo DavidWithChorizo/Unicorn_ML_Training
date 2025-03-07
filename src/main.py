@@ -3,17 +3,17 @@ import os
 import numpy as np
 from data_loading import load_csv_file
 from data_preprocessing import discard_settling_period, extract_eeg_channels, segment_epochs, label_epochs_alternating
-from model_training import build_eegnet_model, train_model
+from model_training import create_eegnet_model, train_model_with_tuning
 from sklearn.model_selection import train_test_split
 
 def main():
     # List of file paths for your sessions.
     # Assume file names include a hint of movement type (e.g., 'left' or 'right').
     filepaths = [
-        "Data_Gtec\UnicornRecorder_06_03_2025_15_23_220_left and neutral 1.csv",
-        "Data_Gtec\UnicornRecorder_06_03_2025_15_30_400_left_and_neutral_2_0.20.csv",
-        "Data_Gtec\UnicornRecorder_06_03_2025_16_25_570_right_1_0.05.csv",
-        "Data_Gtec\UnicornRecorder_06_03_2025_16_32_090_right_2_1.15.csv"
+        "Data_Gtec/UnicornRecorder_06_03_2025_15_23_220_left and neutral 1.csv",
+        "Data_Gtec/UnicornRecorder_06_03_2025_15_30_400_left_and_neutral_2_0.20.csv",
+        "Data_Gtec/UnicornRecorder_06_03_2025_16_25_570_right_1_0.05.csv",
+        "Data_Gtec/UnicornRecorder_06_03_2025_16_32_090_right_2_1.15.csv"
     ]
     
     all_epochs = []
@@ -82,6 +82,8 @@ def main():
     print("Preprocessing complete.")
     print(f"X shape: {X.shape}, y shape: {y.shape}")
     
+
+    '''
     # Optional: split into training and validation sets
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     
@@ -96,6 +98,6 @@ def main():
     # Evaluate model suitability by checking performance and inspecting the training history
     loss, acc = model.evaluate(X_val, y_val)
     print(f"Validation Accuracy: {acc * 100:.2f}%")
-    
+    '''
 if __name__ == '__main__':
     main()
