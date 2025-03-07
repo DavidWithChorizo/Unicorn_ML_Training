@@ -12,7 +12,7 @@ def load_csv_file(filepath):
     try:
         df = pd.read_csv(filepath, header=None)
         # Assign default names
-        df.columns = ['eeg1', 'eeg2', 'eeg3', 'eeg4', 'eeg5', 'eeg6', 'eeg7', 'eeg8', 'timestamp', 'counter']
+        df.columns = ['eeg1', 'eeg2', 'eeg3', 'eeg4', 'eeg5', 'eeg6', 'eeg7', 'eeg8', 'counter', 'timestamp']
         return df
     except Exception as e:
         raise IOError(f"Error reading {filepath}: {e}")

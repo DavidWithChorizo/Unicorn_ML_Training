@@ -2,22 +2,17 @@
 import numpy as np
 
 def discard_settling_period(df, settling_time_seconds, sample_rate=250, counter_column='counter'):
-    """
-    Discard the initial settling period based on the counter column.
-    
-    Parameters:
-      df: DataFrame containing the raw data.
-      settling_time_seconds: Time in seconds to discard.
-      sample_rate: Sampling rate of the data.
-      counter_column: Column name that provides the sample counter.
-      
-    Returns:
-      DataFrame with the settling period removed.
-    """
     num_samples_to_discard = int(settling_time_seconds * sample_rate)
-    min_counter = df[counter_column].min()
-    threshold = min_counter + num_samples_to_discard
-    return df[df[counter_column] >= threshold].reset_index(drop=True)
+    # Normalize the counter so that it starts at 0
+    df['norm_counter'] = df[counter_column] - df[counter_column].min()
+    
+    # For debugging: print the range of normalized counter values
+    print("Normalized counter range:", df['norm_counter'].min(), df['norm_counter'].max())
+    
+    # Discard samples until the normalized counter reaches the threshold
+    df_clean = df[df['norm_counter'] >= num_samples_to_discard].reset_index(drop=True)
+    return df_clean
+
 
 def extract_eeg_channels(df, eeg_columns=None):
     """
