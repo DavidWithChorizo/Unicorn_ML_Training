@@ -90,24 +90,35 @@ def main():
 
     
     X_train_full, X_test, y_train_full, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+        X, y, test_size=0.3, random_state=42, stratify=y
     )
-
+    
     # Further split the training data for hyperparameter tuning (e.g., 80/20 split)
     X_train, X_val, y_train, y_val = train_test_split(
-        X_train_full, y_train_full, test_size=0.2, random_state=42, stratify=y_train_full
+        X_train_full, y_train_full, test_size=0.3, random_state=42, stratify=y_train_full
     )
+    
 
     # Get the input shape and number of classes from your data
     input_shape = X_train.shape[1:]  # e.g., (8, 500, 1)
     nb_classes = len(np.unique(y))
+    print('nb_classes:', nb_classes)
 
     # Run Optuna hyperparameter search on the tuning set
     # n_trials can be adjusted; here we use 20 trials as an example.
-    best_params = optuna_hyperparameter_search(X_train, y_train, X_val, y_val, input_shape, nb_classes, n_trials=20)
-    print("Best parameters from Optuna:", best_params)
+    #best_params = optuna_hyperparameter_search(X_train, y_train, X_val, y_val, input_shape, nb_classes, n_trials=30)
+    #print("Best parameters from Optuna:", best_params)
 
-    # Build the EEGNet model using the best parameters found by Optuna
+
+    # Define fixed hyperparameters (as used in your old model)
+    fixed_params = {
+        "dropoutRate": 0.3686010713284735,
+        "kernLength": 96,
+        "F1": 4,
+        "D": 1,
+        "F2": 6
+    }
+    '''
     model = create_eegnet_model(
         dropoutRate=best_params["dropoutRate"],
         kernLength=best_params["kernLength"],
@@ -117,13 +128,22 @@ def main():
         input_shape=input_shape,
         nb_classes=nb_classes
     )
-
+    '''
+    model = create_eegnet_model(
+        dropoutRate=fixed_params["dropoutRate"],
+        kernLength=fixed_params["kernLength"],
+        F1=fixed_params["F1"],
+        D=fixed_params["D"],
+        F2=fixed_params["F2"],
+        input_shape=input_shape,
+        nb_classes=nb_classes
+    )
     # Train the model using the full training data (or your chosen split)
     history = model.fit(
         X_train_full, y_train_full,
         validation_data=(X_test, y_test),  # or use a dedicated validation set
-        epochs=100,
-        batch_size=32,
+        epochs=50,
+        batch_size=8,
         verbose=1
     )
 

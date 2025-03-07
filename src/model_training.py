@@ -54,11 +54,11 @@ def objective(trial, X_train, y_train, X_val, y_val, input_shape, nb_classes, ep
     Objective function for Optuna hyperparameter tuning.
     """
     # Define a broad search space.
-    dropoutRate = trial.suggest_float('dropoutRate', 0.2, 0.5)
-    kernLength = trial.suggest_int('kernLength', 16, 64, step=8)
-    F1 = trial.suggest_int('F1', 4, 16, step=2)
-    D = trial.suggest_int('D', 1, 2)
-    F2 = trial.suggest_int('F2', 8, 32, step=4)
+    dropoutRate = trial.suggest_float('dropoutRate', 0.2, 0.4)
+    kernLength = trial.suggest_int('kernLength', 100, 200, step=20)
+    F1 = trial.suggest_int('F1', 2, 4, step=2)
+    D = trial.suggest_int('D', 1,2)
+    F2 = trial.suggest_int('F2', 2, 8, step=2)
     
     # Build and train the model using the suggested hyperparameters.
     model = create_eegnet_model(dropoutRate, kernLength, F1, D, F2, input_shape, nb_classes)
