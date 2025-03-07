@@ -10,10 +10,10 @@ def main():
     # List of file paths for your sessions.
     # Assume file names include a hint of movement type (e.g., 'left' or 'right').
     filepaths = [
-        "data/session_left.csv",
-        "data/session_right_1.csv",
-        "data/session_right_2.csv",
-        "data/session_left_2.csv"
+        "Data_Gtec\UnicornRecorder_06_03_2025_15_23_220_left and neutral 1.csv",
+        "Data_Gtec\UnicornRecorder_06_03_2025_15_30_400_left_and_neutral_2_0.20.csv",
+        "Data_Gtec\UnicornRecorder_06_03_2025_16_25_570_right_1_0.05.csv",
+        "Data_Gtec\UnicornRecorder_06_03_2025_16_32_090_right_2_1.15.csv"
     ]
     
     all_epochs = []
@@ -27,10 +27,10 @@ def main():
     # For each session, you might have different settling times.
     # You could either hard-code them or read from a config.
     settling_times = {
-        "session_left.csv": 20,
-        "session_right_1.csv": 15,
-        "session_right_2.csv": 15,
-        "session_left_2.csv": 18,
+        "UnicornRecorder_06_03_2025_15_23_220_left and neutral 1.csv": 30,
+        "UnicornRecorder_06_03_2025_15_30_400_left_and_neutral_2_0.20.csv": 15,
+        "UnicornRecorder_06_03_2025_16_25_570_right_1_0.05.csv": 10,
+        "UnicornRecorder_06_03_2025_16_32_090_right_2_1.15.csv": 75,
     }
     
     # Each epoch is 2 seconds (i.e., 500 samples)
