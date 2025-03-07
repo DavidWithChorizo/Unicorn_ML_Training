@@ -57,16 +57,26 @@ def segment_epochs(eeg_data, epoch_length_seconds, sample_rate=250):
     epochs = np.reshape(eeg_data, (n_epochs, epoch_length_samples, eeg_data.shape[1]))
     return epochs
 
-def label_epochs(epochs, label):
+def label_epochs_alternating(epochs, movement_label, neutral_label=2):
     """
-    Generate a label array for epochs.
+    Label epochs in an alternating pattern. Assumes the first epoch is a movement epoch,
+    and then alternates with neutral epochs.
     
     Parameters:
-      epochs: Array of shape (n_epochs, epoch_length_samples, n_channels).
-      label: The label to assign (e.g., 0 for left, 1 for right, or any integer).
+      epochs: NumPy array of shape (n_epochs, ...).
+      movement_label: Label for the movement (e.g. 0 for left, 1 for right).
+      neutral_label: Label for neutral (default is 2).
       
     Returns:
-      NumPy array of labels of shape (n_epochs,).
+      A NumPy array of labels for each epoch.
     """
     n_epochs = epochs.shape[0]
-    return np.full((n_epochs,), label)
+    labels = []
+    for i in range(n_epochs):
+        # Even index: movement, Odd index: neutral.
+        if i % 2 == 0:
+            labels.append(movement_label)
+        else:
+            labels.append(neutral_label)
+    return np.array(labels)
+

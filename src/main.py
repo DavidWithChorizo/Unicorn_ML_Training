@@ -2,7 +2,7 @@
 import os
 import numpy as np
 from data_loading import load_csv_file
-from data_preprocessing import discard_settling_period, extract_eeg_channels, segment_epochs, label_epochs
+from data_preprocessing import discard_settling_period, extract_eeg_channels, segment_epochs, label_epochs_alternating
 from model_training import build_eegnet_model, train_model
 from sklearn.model_selection import train_test_split
 
@@ -36,6 +36,7 @@ def main():
     # Each epoch is 2 seconds (i.e., 500 samples)
     epoch_length_seconds = 2
     
+    # For each session file, process and label the data.
     for filepath in filepaths:
         print(f"Processing {filepath}...")
         df = load_csv_file(filepath)
@@ -43,28 +44,30 @@ def main():
         # Determine settling time based on the file name
         filename = os.path.basename(filepath)
         settling_time = settling_times.get(filename, 20)  # default to 20 seconds
-        
-        # Discard settling period
         df_clean = discard_settling_period(df, settling_time, sample_rate=sample_rate, counter_column='counter')
-        
-        # Extract EEG data
-        eeg_data = extract_eeg_channels(df_clean, eeg_columns)
-        
-        # Segment the data into epochs (each 2 seconds long)
+        eeg_data = extract_eeg_channels(df_clean)  # defaults to first 8 columns
         epochs = segment_epochs(eeg_data, epoch_length_seconds, sample_rate=sample_rate)
         
-        # Decide on label based on session type (this is just an example)
+        # Decide movement label based on session type.
+        # Here, "left" or "right" in filename determines the movement label.
         if "left" in filename.lower():
-            label = 0  # For left-hand movement
+            movement_label = 0  # left-hand movement
         elif "right" in filename.lower():
-            label = 1  # For right-hand movement
+            movement_label = 1  # right-hand movement
         else:
-            label = 2  # Could use a separate label for neutral or undefined
+            movement_label = None  # For undefined sessions
         
-        labels = label_epochs(epochs, label)
+        # If the file is clearly a movement session, label alternating epochs.
+        if movement_label is not None:
+            labels = label_epochs_alternating(epochs, movement_label, neutral_label=2)
+        else:
+            # If movement_label is undefined, you might choose to label all epochs as neutral,
+            # or handle it differently.
+            labels = np.full((epochs.shape[0],), 2)
         
         all_epochs.append(epochs)
         all_labels.append(labels)
+
     
     # Combine data from all sessions
     X = np.concatenate(all_epochs, axis=0)  # shape: (n_epochs, epoch_length_samples, n_channels)
