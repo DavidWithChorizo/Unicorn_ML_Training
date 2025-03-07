@@ -143,5 +143,3 @@ def train_model_with_tuning(X_train, y_train, X_val, y_val, input_shape, nb_clas
     grid_result = grid_search_finetune(X_train, y_train, input_shape, nb_classes, epochs=50, batch_size=32, cv=3, refined_grid=refined_grid)
     
     return grid_result
-
-print("Model training script loaded.")
