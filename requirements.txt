@@ -39,3 +39,5 @@ jupyterlab
 
 # For allowing triggers to be asserted during data acquisition
 keyboard
+
+pygame
