@@ -5,10 +5,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("EEG Training and Accuracy")
-        self.geometry("400x300")
-        # Store the chosen training direction ("left" or "right")
-        self.direction = None  
-        # Create a container for the pages (frames)
+        self.geometry("1920x1080")  # Set to 2K resolution
+        self.direction = None  # Stores the training direction ("left" or "right")
         self.frames = {}
         for F in (StartPage, TrainingPage, AccuracyPage):
             frame = F(self)
@@ -24,14 +22,14 @@ class App(tk.Tk):
 class StartPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        label = tk.Label(self, text="Welcome to EEG Trainer", font=("Helvetica", 16))
-        label.pack(pady=20)
-        train_btn = tk.Button(self, text="Training", width=20,
-                              command=lambda: parent.show_frame(TrainingPage))
-        train_btn.pack(pady=10)
-        accuracy_btn = tk.Button(self, text="Check Accuracy", width=20,
-                                 command=lambda: parent.show_frame(AccuracyPage))
-        accuracy_btn.pack(pady=10)
+        label = tk.Label(self, text="Welcome to EEG Trainer", font=("Helvetica", 40))
+        label.pack(pady=50)
+        train_btn = tk.Button(self, text="Training", width=30,
+                              command=lambda: parent.show_frame(TrainingPage), font=("Helvetica", 20))
+        train_btn.pack(pady=30)
+        accuracy_btn = tk.Button(self, text="Check Accuracy", width=30,
+                                 command=lambda: parent.show_frame(AccuracyPage), font=("Helvetica", 20))
+        accuracy_btn.pack(pady=30)
 
 
 class TrainingPage(tk.Frame):
@@ -39,16 +37,23 @@ class TrainingPage(tk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.info_label = tk.Label(self, text="Please relax. Session will start in 5 seconds.",
-                                   font=("Helvetica", 14))
-        self.info_label.pack(pady=20)
-        self.canvas = tk.Canvas(self, width=300, height=100, bg="white")
+                                   font=("Helvetica", 32))
+        self.info_label.pack(pady=30)
+        # Canvas set to 2K resolution
+        self.canvas_width = 1920
+        self.canvas_height = 1080
+        self.canvas = tk.Canvas(self, width=self.canvas_width, height=self.canvas_height, bg="white")
         self.canvas.pack(pady=20)
+        # Back to Main Menu button
+        self.back_button = tk.Button(self, text="Back to Main Menu", width=30,
+                                     command=lambda: self.parent.show_frame(StartPage), font=("Helvetica", 20))
+        self.back_button.pack(pady=20)
         self.action_count = 0
-        # Start the training after 5 seconds (5000 ms)
+        # Start training after 5 seconds (5000ms)
         self.after(5000, self.start_training)
 
     def start_training(self):
-        # Randomly choose a direction (50/50 chance)
+        # Choose a direction at random (50/50 chance)
         direction = random.choice(["left", "right"])
         self.parent.direction = direction
         self.info_label.config(text=f"Training Session: {direction.upper()} movement arrows")
@@ -64,20 +69,22 @@ class TrainingPage(tk.Frame):
     def animate_arrow(self):
         self.canvas.delete("all")
         direction = self.parent.direction
-        # Setup initial and target positions for the arrow
+        # Use the full canvas width
+        canvas_width = self.canvas_width
+        y_pos = self.canvas_height // 2  # Center vertically
         if direction == "left":
-            start_x = 300
+            start_x = canvas_width
             end_x = 0
             arrow_char = "←"
         else:
             start_x = 0
-            end_x = 300
+            end_x = canvas_width
             arrow_char = "→"
-        y_pos = 50
-        # Create the arrow on the canvas
-        arrow_id = self.canvas.create_text(start_x, y_pos, text=arrow_char, font=("Helvetica", 32))
+
+        # Create the arrow with a large font and explicit fill color for contrast
+        arrow_id = self.canvas.create_text(start_x, y_pos, text=arrow_char, font=("Helvetica", 100), fill="black")
         duration = 2000  # 2 seconds for the animation
-        steps = 100  # total animation steps
+        steps = 100     # Number of animation steps
         dx = (end_x - start_x) / steps
         delay = duration // steps
 
@@ -87,7 +94,7 @@ class TrainingPage(tk.Frame):
                 self.after(delay, lambda: step(count + 1))
             else:
                 self.action_count += 1
-                # Pause briefly between actions (500ms) before next animation
+                # Pause 500ms between actions before the next animation
                 self.after(500, self.run_next_action)
 
         step(0)
@@ -97,28 +104,26 @@ class AccuracyPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
-        self.title_label = tk.Label(self, text="Accuracy Score", font=("Helvetica", 16))
-        self.title_label.pack(pady=20)
-        self.accuracy_label = tk.Label(self, text="", font=("Helvetica", 14))
-        self.accuracy_label.pack(pady=20)
-        self.calc_button = tk.Button(self, text="Calculate Accuracy", width=20,
-                                     command=self.calculate_accuracy)
-        self.calc_button.pack(pady=10)
-        self.back_button = tk.Button(self, text="Back to Main Menu", width=20,
-                                     command=lambda: parent.show_frame(StartPage))
-        self.back_button.pack(pady=10)
+        self.title_label = tk.Label(self, text="Accuracy Score", font=("Helvetica", 40))
+        self.title_label.pack(pady=50)
+        self.accuracy_label = tk.Label(self, text="", font=("Helvetica", 32))
+        self.accuracy_label.pack(pady=30)
+        self.calc_button = tk.Button(self, text="Calculate Accuracy", width=30,
+                                     command=self.calculate_accuracy, font=("Helvetica", 20))
+        self.calc_button.pack(pady=20)
+        self.back_button = tk.Button(self, text="Back to Main Menu", width=30,
+                                     command=lambda: parent.show_frame(StartPage), font=("Helvetica", 20))
+        self.back_button.pack(pady=20)
 
     def calculate_accuracy(self):
-        # Simulate EEG data processing and ML model predictions.
-        # In a real application, here you would load EEG data and feed it into your ML model.
+        # In a real application, this would process the EEG data and run an ML model.
         if self.parent.direction is None:
             self.accuracy_label.config(text="No training data available.")
             return
 
         correct_predictions = 0
-        # Simulate 10 decisions; assume 80% chance the ML model correctly predicts the intended direction.
+        # Simulate 10 predictions with an assumed 80% accuracy per action.
         for _ in range(10):
-            # Simulate the ML model's prediction
             prediction = self.parent.direction if random.random() < 0.8 else (
                 "right" if self.parent.direction == "left" else "left")
             if prediction == self.parent.direction:
