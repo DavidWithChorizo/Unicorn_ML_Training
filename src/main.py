@@ -150,6 +150,9 @@ def main():
     # Evaluate the model on the test set
     loss, acc = model.evaluate(X_test, y_test)
     print(f"Test Accuracy: {acc * 100:.2f}%")
+
+    # Save the model for later use
+    model.save("eeg_model_1.h5")
     
 if __name__ == '__main__':
     main()
