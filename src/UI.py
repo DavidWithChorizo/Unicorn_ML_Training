@@ -245,13 +245,24 @@ class AccuracyPage(ttk.Frame):
             filename = os.path.basename(latest_file)
             
             #if the filename contains openbci, the settling time is 75
+            '''
             if "test_1" and "righthand" in filename.lower():
                 settling_time = 75
             if"test_1" and "lefthand" in filename.lower():
                 settling_time = 30
             print(f"Processing {latest_file} with settling time {settling_time}")
-            if "demo" in filename.lower():
+            if "_demo_" in filename.lower():
                 settling_time = 5
+            '''
+
+            if "test_1" in filename.lower() and "righthand" in filename.lower():
+                settling_time = 75
+            elif "test_1" in filename.lower() and "lefthand" in filename.lower():
+                settling_time = 30
+            elif "_demo_" in filename.lower():
+                settling_time = 5
+            else:
+                settling_time = default_value
 
             df = load_csv_file(latest_file)
             df_clean = discard_settling_period(df, settling_time, sample_rate=250, counter_column='counter')
@@ -285,5 +296,6 @@ class AccuracyPage(ttk.Frame):
             self.accuracy_label.config(text=f"Error: {str(e)}")
 
 if __name__ == "__main__":
+    default_value = 5
     app = App()
     app.mainloop()
