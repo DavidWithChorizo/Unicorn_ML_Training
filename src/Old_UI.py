@@ -135,3 +135,14 @@ class AccuracyPage(tk.Frame):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+
+
+
+
+    '''settling_times = {
+                "UnicornRecorder_06_03_2025_15_23_220_left and neutral 1.csv": 30,
+                "UnicornRecorder_06_03_2025_15_30_400_left_and_neutral_2_0.20.csv": 15,
+                "UnicornRecorder_06_03_2025_16_25_570_right_1_0.05.csv": 10,
+                "UnicornRecorder_06_03_2025_16_32_090_right_2_1.15.csv": 75,
+            }'
+            '''

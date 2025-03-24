@@ -241,15 +241,17 @@ class AccuracyPage(ttk.Frame):
         try:
             data_folder = "Data_Gtec"
             latest_file = get_latest_csv_file(data_folder)
-            settling_times = {
-                "UnicornRecorder_06_03_2025_15_23_220_left and neutral 1.csv": 30,
-                "UnicornRecorder_06_03_2025_15_30_400_left_and_neutral_2_0.20.csv": 15,
-                "UnicornRecorder_06_03_2025_16_25_570_right_1_0.05.csv": 10,
-                "UnicornRecorder_06_03_2025_16_32_090_right_2_1.15.csv": 75,
-            }
+            
             filename = os.path.basename(latest_file)
-            settling_time = settling_times.get(filename, 5)
+            
+            #if the filename contains openbci, the settling time is 75
+            if "test_1" and "righthand" in filename.lower():
+                settling_time = 75
+            if"test_1" and "lefthand" in filename.lower():
+                settling_time = 30
             print(f"Processing {latest_file} with settling time {settling_time}")
+            if "demo" in filename.lower():
+                settling_time = 5
 
             df = load_csv_file(latest_file)
             df_clean = discard_settling_period(df, settling_time, sample_rate=250, counter_column='counter')
