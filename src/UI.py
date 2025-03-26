@@ -256,9 +256,9 @@ class AccuracyPage(ttk.Frame):
             '''
 
             if "test_1" in filename.lower() and "righthand" in filename.lower():
-                settling_time = 75
+                settling_time = 5
             elif "test_1" in filename.lower() and "lefthand" in filename.lower():
-                settling_time = 30
+                settling_time = 5
             elif "_demo_" in filename.lower():
                 settling_time = 5
             else:
