@@ -244,17 +244,6 @@ class AccuracyPage(ttk.Frame):
             
             filename = os.path.basename(latest_file)
             
-            #if the filename contains openbci, the settling time is 75
-            '''
-            if "test_1" and "righthand" in filename.lower():
-                settling_time = 75
-            if"test_1" and "lefthand" in filename.lower():
-                settling_time = 30
-            print(f"Processing {latest_file} with settling time {settling_time}")
-            if "_demo_" in filename.lower():
-                settling_time = 5
-            '''
-
             if "test_1" in filename.lower() and "righthand" in filename.lower():
                 settling_time = 5
             elif "test_1" in filename.lower() and "lefthand" in filename.lower():
