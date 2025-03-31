@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from tensorflow.keras.models import load_model# type: ignore
 from datetime import datetime
+import subprocess
 
 # ---------------------
 # Data Processing Functions
@@ -139,22 +140,36 @@ class TrainingPage(ttk.Frame):
         self.back_button.pack()
 
         self.action_count = 0
+        self.uart_process = None  # Add this line to keep a reference to the running process
 
     def start_training(self):
-        # Disable start button to prevent multiple clicks.
         self.start_button.config(state=tk.DISABLED)
-        # Randomly decide the movement direction.
         direction = random.choice(["left", "right"])
         self.parent.direction = direction
         self.info_label.config(text=f"Training Session: {direction.upper()} movement arrows")
         self.action_count = 0
+
+        #Start the UART data collection script as a background process
+        try:
+            script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'uart_2_channels_testing.py'))
+            self.uart_process = subprocess.Popen(['python3', script_path])
+            print(f"Started data recording process: {self.uart_process.pid}")
+        except Exception as e:
+            print(f"Failed to start UART script: {e}")
+            self.info_label.config(text=f"Error starting data recording: {e}")
+            return
+
         self.run_next_action()
 
     def run_next_action(self):
         if self.action_count < 10:
             self.animate_arrow()
         else:
-            # When training finishes, save demo data.
+            # When training finishes, stop UART process and save demo data.
+            if self.uart_process:
+                self.uart_process.terminate()
+                self.uart_process.wait()
+                print("Data recording process terminated.")
             self.info_label.config(text="Training complete. Saving demo data...")
             self.save_demo_data()
             self.info_label.config(text="Training complete. Demo data saved. Please return to main menu.")
