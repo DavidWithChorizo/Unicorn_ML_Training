@@ -71,11 +71,9 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("EEG Training and Accuracy")
-        # Set to a smaller window size (1600x900)
         self.geometry("1600x900")
         self.configure(background="#ECF0F1")
 
-        # Configure ttk styles for a modern look.
         style = ttk.Style(self)
         style.theme_use('clam')
         style.configure('TFrame', background="#ECF0F1")
@@ -84,7 +82,7 @@ class App(tk.Tk):
         style.configure('SubHeader.TLabel', font=("Helvetica", 28))
         style.configure('TButton', font=("Helvetica", 18), padding=8)
 
-        self.direction = None  # "left" or "right" for the training session
+        self.direction = None
         self.frames = {}
         for F in (StartPage, TrainingPage, AccuracyPage):
             frame = F(self)
@@ -113,45 +111,39 @@ class TrainingPage(ttk.Frame):
         super().__init__(parent)
         self.parent = parent
 
-        # Top frame for the information label.
         top_frame = ttk.Frame(self)
         top_frame.pack(pady=20)
         self.info_label = ttk.Label(top_frame, text="Press 'Start Training' to begin.", style='SubHeader.TLabel')
         self.info_label.pack()
 
-        # Start Training button.
         self.start_button = ttk.Button(top_frame, text="Start Training", command=self.start_training)
         self.start_button.pack(pady=10)
 
-        # Middle frame for the canvas.
         middle_frame = ttk.Frame(self)
         middle_frame.pack(pady=10)
-        # Adjusted canvas size for a smaller window.
         self.canvas_width = 1400
         self.canvas_height = 600
         self.canvas = tk.Canvas(middle_frame, width=self.canvas_width, height=self.canvas_height, bg="white", highlightthickness=0)
         self.canvas.pack()
 
-        # Bottom frame for the Back button.
         bottom_frame = ttk.Frame(self)
         bottom_frame.pack(pady=20)
         self.back_button = ttk.Button(bottom_frame, text="Back to Main Menu",
                                       command=lambda: parent.show_frame(StartPage))
         self.back_button.pack()
 
-        self.action_count = 0
-        self.uart_process = None  # Add this line to keep a reference to the running process
+        self.uart_process = None
+        self.total_instruction_pairs = 10  # 10 movement + 10 neutral = 20 blocks = 40s + 5s calm down
+        self.current_action = 0
 
     def start_training(self):
         self.start_button.config(state=tk.DISABLED)
-        direction = random.choice(["left", "right"])
-        self.parent.direction = direction
-        self.info_label.config(text=f"Training Session: {direction.upper()} movement arrows")
-        self.action_count = 0
+        self.parent.direction = random.choice(["left", "right"])
+        self.info_label.config(text="Calm down and relax...")
 
-        #Start the UART data collection script as a background process
+        # Start UART recording process immediately
         try:
-            script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'uart_2_channels_testing.py'))
+            script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'uart_2_channels_testing.py'))
             self.uart_process = subprocess.Popen(['python3', script_path])
             print(f"Started data recording process: {self.uart_process.pid}")
         except Exception as e:
@@ -159,13 +151,11 @@ class TrainingPage(ttk.Frame):
             self.info_label.config(text=f"Error starting data recording: {e}")
             return
 
-        self.run_next_action()
+        # 5 seconds calm down period before instructions begin
+        self.after(5000, self.run_next_block)
 
-    def run_next_action(self):
-        if self.action_count < 10:
-            self.animate_arrow()
-        else:
-            # When training finishes, stop UART process and save demo data.
+    def run_next_block(self):
+        if self.current_action >= self.total_instruction_pairs * 2:
             if self.uart_process:
                 self.uart_process.terminate()
                 self.uart_process.wait()
@@ -173,23 +163,31 @@ class TrainingPage(ttk.Frame):
             self.info_label.config(text="Training complete. Saving demo data...")
             self.save_demo_data()
             self.info_label.config(text="Training complete. Demo data saved. Please return to main menu.")
+            return
+
+        is_instruction = self.current_action % 2 == 0
+        if is_instruction:
+            self.animate_arrow()
+        else:
+            self.canvas.delete("all")
+            self.info_label.config(text="Neutral. Stay relaxed.")
+            self.after(2000, self.run_next_block)
+
+        self.current_action += 1
 
     def animate_arrow(self):
         self.canvas.delete("all")
         direction = self.parent.direction
-        canvas_width = self.canvas_width
+        self.info_label.config(text=f"{direction.upper()} movement")
+        start_x = self.canvas_width if direction == "left" else 0
+        end_x = 0 if direction == "left" else self.canvas_width
+        arrow_char = "←" if direction == "left" else "→"
         y_pos = self.canvas_height // 2
-        if direction == "left":
-            start_x = canvas_width
-            end_x = 0
-            arrow_char = "←"
-        else:
-            start_x = 0
-            end_x = canvas_width
-            arrow_char = "→"
+
         arrow_id = self.canvas.create_text(start_x, y_pos, text=arrow_char,
                                            font=("Helvetica", 80), fill="black")
-        duration = 2000  # total animation duration in milliseconds
+
+        duration = 2000
         steps = 100
         dx = (end_x - start_x) / steps
         delay = duration // steps
@@ -199,17 +197,12 @@ class TrainingPage(ttk.Frame):
                 self.canvas.move(arrow_id, dx, 0)
                 self.after(delay, lambda: step(count + 1))
             else:
-                self.action_count += 1
-                self.after(500, self.run_next_action)
+                self.after(2000, self.run_next_block)
+
         step(0)
 
     def save_demo_data(self):
-        """
-        For demo purposes, pick one pre-existing database (from 4 available) based on the training direction,
-        extract the first 25 seconds of data, and save it as a new demo file.
-        """
         data_folder = "Data_Gtec"
-        # Mapping of available demo files.
         demo_files = {
             "left": ["UnicornRecorder_06_03_2025_15_23_220_left and neutral 1.csv",
                      "UnicornRecorder_06_03_2025_15_30_400_left_and_neutral_2_0.20.csv"],
@@ -217,18 +210,11 @@ class TrainingPage(ttk.Frame):
                       "UnicornRecorder_06_03_2025_16_32_090_right_2_1.15.csv"]
         }
         direction = self.parent.direction
-        if direction not in demo_files:
-            self.info_label.config(text="Error: Invalid training direction.")
-            return
-        # Randomly choose one file from the available ones for the given direction.
         chosen_file = random.choice(demo_files[direction])
         chosen_filepath = os.path.join(data_folder, chosen_file)
         try:
             df = load_csv_file(chosen_filepath)
-            # 25 seconds of data at a sample rate of 250 Hz.
-            n_rows = 25 * 250  # 6250 rows
-            demo_df = df.head(n_rows)
-            # Save demo data with a timestamp in the filename so that it becomes the latest file.
+            demo_df = df.head(25 * 250)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             demo_filename = f"UnicornRecorder_demo_{direction}_{timestamp}.csv"
             demo_filepath = os.path.join(data_folder, demo_filename)

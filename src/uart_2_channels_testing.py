@@ -26,17 +26,17 @@ def main():
 
     with open(output_file, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['ADC1', 'ADC2', 'Counter', 'Timestamp'])  # Updated header
+        writer.writerow(['ADC1', 'ADC2', 'ADC3', 'ADC4', 'ADC5', 'ADC6', 'Counter', 'Timestamp'])  # Updated header
 
         try:
             while True:
                 line = ser.readline().decode(errors='ignore').strip()
                 if line:
                     parts = line.split(',')
-                    if len(parts) == 3:
+                    if len(parts) == 7:
                         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                         sample_count += 1
-                        writer.writerow([parts[1], parts[2], sample_count, timestamp])
+                        writer.writerow([parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], sample_count, timestamp])
                         print(f"{sample_count}: {line}")
 
                         if sample_count % FLUSH_INTERVAL == 0:
