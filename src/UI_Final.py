@@ -22,7 +22,7 @@ os.makedirs(DATA_FOLDER, exist_ok=True)
 # ---------------------
 # File & Data Loading Functions
 # ---------------------
-def get_next_csv_filename(directory, base_name="adc_data", extension="csv"):
+def get_next_csv_filename(directory, base_name="adc", extension="csv"):
     """
     Returns the next available filename in the directory.
     E.g. If adc_data_1.csv exists, returns adc_data_2.csv, etc.
@@ -151,7 +151,7 @@ class TrainingPage(ttk.Frame):
         self.back_button.pack()
 
         # Training parameters
-        self.total_instruction_pairs = 10  # 10 movement + 10 neutral phases.
+        self.total_instruction_pairs = 50  # 50 movement + 10 neutral phases.
         self.current_action = 0
         # Instead of launching an external script, we record serial data in a thread:
         self.serial_thread = None
