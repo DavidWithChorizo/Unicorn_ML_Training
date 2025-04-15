@@ -151,8 +151,8 @@ class TrainingPage(ttk.Frame):
             self.info_label.config(text=f"Error starting data recording: {e}")
             return
 
-        # 5 seconds calm down period before instructions begin
-        self.after(5000, self.run_next_block)
+        # 10 seconds calm down period before instructions begin
+        self.after(10000, self.run_next_block)
 
     def run_next_block(self):
         if self.current_action >= self.total_instruction_pairs * 2:
@@ -197,7 +197,7 @@ class TrainingPage(ttk.Frame):
                 self.canvas.move(arrow_id, dx, 0)
                 self.after(delay, lambda: step(count + 1))
             else:
-                self.after(2000, self.run_next_block)
+                self.after(0, self.run_next_block)
 
         step(0)
 

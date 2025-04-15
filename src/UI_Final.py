@@ -4,30 +4,44 @@ import random
 import os
 import pandas as pd
 import numpy as np
-from tensorflow.keras.models import load_model  # type: ignore
-from datetime import datetime
+import threading
 import serial
 import csv
-import threading
+from tensorflow.keras.models import load_model  # type: ignore
+from datetime import datetime
 
 # ---------------------
-# Global Serial and File Configuration
+# Global Serial & Data Settings
 # ---------------------
-SERIAL_PORT = '/dev/tty.usbmodem103'  # Change to your actual serial port.
+SERIAL_PORT = '/dev/tty.usbmodem103'  # Change to your actual serial port if needed.
 BAUD_RATE = 115200
 FLUSH_INTERVAL = 10
-DATA_FOLDER = "Data_Gtec"  # Data folder for serial streams.
+DATA_FOLDER = "Data_Gtec"  # Use same folder name as before (or change as desired)
 os.makedirs(DATA_FOLDER, exist_ok=True)
 
 # ---------------------
-# Data Processing Functions
+# File & Data Loading Functions
 # ---------------------
+def get_next_csv_filename(directory, base_name="adc_data", extension="csv"):
+    """
+    Returns the next available filename in the directory.
+    E.g. If adc_data_1.csv exists, returns adc_data_2.csv, etc.
+    """
+    n = 1
+    while True:
+        filename = f"{base_name}_{n}.{extension}"
+        full_path = os.path.join(directory, filename)
+        if not os.path.exists(full_path):
+            return full_path
+        n += 1
+
 def load_csv_file(filepath):
     """
     Load a CSV file without headers and assign default column names.
     Assumes CSV has 10 columns.
     """
     try:
+        # Read file assuming no header row.
         df = pd.read_csv(filepath, header=None)
         df.columns = ['eeg1', 'eeg2', 'eeg3', 'eeg4', 'eeg5', 'eeg6', 'eeg7', 'eeg8', 'counter', 'timestamp']
         return df
@@ -56,10 +70,8 @@ def segment_epochs(eeg_data, epoch_length_seconds, sample_rate=250):
 
 def label_epochs_alternating(epochs, movement_label, neutral_label=2):
     n_epochs = epochs.shape[0]
-    labels = []
-    for i in range(n_epochs):
-        labels.append(movement_label if i % 2 == 0 else neutral_label)
-    return np.array(labels)
+    # Assign alternating labels: movement for even and neutral for odd indices.
+    return np.array([movement_label if i % 2 == 0 else neutral_label for i in range(n_epochs)])
 
 def get_latest_csv_file(folder_path):
     """Return the most recently modified CSV file from the folder."""
@@ -69,19 +81,6 @@ def get_latest_csv_file(folder_path):
     full_paths = [os.path.join(folder_path, f) for f in files]
     latest_file = max(full_paths, key=os.path.getmtime)
     return latest_file
-
-def get_next_csv_filename(directory, base_name="adc_data", extension="csv"):
-    """
-    Returns the next available filename in the specified directory with incrementing numbering.
-    Example: adc_data_1.csv, adc_data_2.csv, etc.
-    """
-    n = 1
-    while True:
-        filename = f"{base_name}_{n}.{extension}"
-        full_path = os.path.join(directory, filename)
-        if not os.path.exists(full_path):
-            return full_path
-        n += 1
 
 # ---------------------
 # Tkinter UI Code
@@ -151,35 +150,32 @@ class TrainingPage(ttk.Frame):
                                       command=lambda: parent.show_frame(StartPage))
         self.back_button.pack()
 
-        # Attributes for serial data streaming.
-        self.stop_event = None
+        # Training parameters
+        self.total_instruction_pairs = 10  # 10 movement + 10 neutral phases.
+        self.current_action = 0
+        # Instead of launching an external script, we record serial data in a thread:
         self.serial_thread = None
+        self.stop_event = None
         self.output_file = None
 
-        # Total number of action blocks (movement + neutral).
-        self.total_instruction_pairs = 10  
-        self.current_action = 0
-
     def start_training(self):
-        self.current_action = 0
+        self.start_button.config(state=tk.DISABLED)
         self.parent.direction = random.choice(["left", "right"])
         self.info_label.config(text="Calm down and relax...")
-        self.canvas.delete("all")
-        self.start_button.config(state=tk.DISABLED)
 
-        # Start serial data streaming using an incrementing file name.
-        self.output_file = get_next_csv_filename(DATA_FOLDER, base_name="adc_data")
+        # Set up serial data recording (using auto-incremented numbering).
+        self.output_file = get_next_csv_filename(DATA_FOLDER)
         self.stop_event = threading.Event()
         self.serial_thread = threading.Thread(target=self.read_serial_data, args=(self.output_file, self.stop_event))
         self.serial_thread.start()
-        print(f"Started serial recording to {self.output_file}")
+        print("Started data streaming to", self.output_file)
 
-        # 10-second calm down period before starting the instructions.
+        # 10-second calm period before instructions begin.
         self.after(10000, self.run_next_block)
 
     def run_next_block(self):
         if self.current_action >= self.total_instruction_pairs * 2:
-            # Training complete; stop serial data streaming.
+            # Finished training: stop serial recording thread.
             if self.stop_event:
                 self.stop_event.set()
             if self.serial_thread:
@@ -208,7 +204,8 @@ class TrainingPage(ttk.Frame):
 
         arrow_id = self.canvas.create_text(start_x, y_pos, text=arrow_char,
                                            font=("Helvetica", 80), fill="black")
-        duration = 2000  # milliseconds
+
+        duration = 2000  # in milliseconds
         steps = 100
         dx = (end_x - start_x) / steps
         delay = duration // steps
@@ -223,9 +220,13 @@ class TrainingPage(ttk.Frame):
         step(0)
 
     def read_serial_data(self, output_file, stop_event):
+        """
+        Open the serial port and continuously record data to output_file until stop_event is set.
+        Data is written without a header row so that downstream processing remains consistent.
+        """
         try:
             ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-            print(f"Connected to serial port {SERIAL_PORT} at {BAUD_RATE} baud.")
+            print(f"Connected to {SERIAL_PORT} at {BAUD_RATE} baud.")
         except Exception as e:
             print(f"Error connecting to serial port: {e}")
             return
@@ -233,8 +234,7 @@ class TrainingPage(ttk.Frame):
         sample_count = 0
         with open(output_file, 'w', newline='') as f:
             writer = csv.writer(f)
-            # Write the header row.
-            writer.writerow(['eeg1', 'eeg2', 'eeg3', 'eeg4', 'eeg5', 'eeg6', 'eeg7', 'eeg8', 'counter', 'timestamp'])
+            # Do NOT write header, to match load_csv_file expectations.
             while not stop_event.is_set():
                 try:
                     line = ser.readline().decode(errors='ignore').strip()
@@ -243,9 +243,11 @@ class TrainingPage(ttk.Frame):
                     continue
                 if line:
                     parts = line.split(',')
+                    # Expect at least 8 values for the ADC channels.
                     if len(parts) >= 8:
                         sample_count += 1
                         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                        # Write the 8 ADC values, a counter and a timestamp.
                         writer.writerow(parts[:8] + [sample_count, timestamp])
                         print(f"Sample {sample_count}: {parts[:8]}")
                         if sample_count % FLUSH_INTERVAL == 0:
@@ -264,4 +266,56 @@ class AccuracyPage(ttk.Frame):
         self.calc_button = ttk.Button(self, text="Calculate Accuracy",
                                       command=self.calculate_accuracy)
         self.calc_button.pack(pady=20)
-        self.back_button = ttk.Button
+        self.back_button = ttk.Button(self, text="Back to Main Menu",
+                                      command=lambda: parent.show_frame(StartPage))
+        self.back_button.pack(pady=20)
+
+    def calculate_accuracy(self):
+        try:
+            # Get the latest file from the DATA_FOLDER
+            latest_file = get_latest_csv_file(DATA_FOLDER)
+            filename = os.path.basename(latest_file)
+            # Determine a settling time based on the filename (example logic).
+            if "test_1" in filename.lower() and "righthand" in filename.lower():
+                settling_time = 5
+            elif "test_1" in filename.lower() and "lefthand" in filename.lower():
+                settling_time = 5
+            elif "_demo_" in filename.lower():
+                settling_time = 5
+            else:
+                settling_time = 5
+
+            df = load_csv_file(latest_file)
+            df_clean = discard_settling_period(df, settling_time, sample_rate=250, counter_column='counter')
+            eeg_data = extract_eeg_channels(df_clean)
+            epochs = segment_epochs(eeg_data, epoch_length_seconds=2, sample_rate=250)
+
+            if "left" in filename.lower():
+                movement_label = 0
+            elif "right" in filename.lower():
+                movement_label = 1
+            else:
+                movement_label = None
+
+            if movement_label is not None:
+                labels = label_epochs_alternating(epochs, movement_label, neutral_label=2)
+            else:
+                labels = np.full((epochs.shape[0],), 2)
+
+            X = np.transpose(epochs, (0, 2, 1))
+            X = X[..., np.newaxis]
+            y = labels
+
+            model = load_model("eeg_model_2.h5")
+            predictions = model.predict(X)
+            pred_labels = np.argmax(predictions, axis=1)
+
+            correct = np.sum(pred_labels == y)
+            accuracy = (correct / len(y)) * 100
+            self.accuracy_label.config(text=f"Model Accuracy: {accuracy:.1f}%")
+        except Exception as e:
+            self.accuracy_label.config(text=f"Error: {str(e)}")
+
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
