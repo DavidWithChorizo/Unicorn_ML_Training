@@ -14,6 +14,7 @@ Features:
     - Splits the data into training, validation, and test sets.
     - Optionally uses Optuna for hyperparameter tuning of the EEGNet model.
     - Trains and evaluates the model, then saves it to disk.
+    - Generates a classification report table and plots training learning curves.
 
 Usage:
     Simply run the script in your Python environment. Make sure all required CSV files 
@@ -24,14 +25,15 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report  # For performance metrics table
 # Import necessary Keras components for building the EEGNet model.
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (Input, Conv2D, BatchNormalization, DepthwiseConv2D,
                                      Activation, AveragePooling2D, Dropout, SeparableConv2D,
                                      Flatten, Dense)
 from tensorflow.keras.constraints import max_norm
-from sklearn.model_selection import train_test_split
 import optuna
 
 
@@ -252,7 +254,7 @@ def run_optuna_tuning(X_train, y_train, X_val, y_val, input_shape, nb_classes, n
 def main():
     """
     Main function to load data, preprocess, tune hyperparameters (optional),
-    train the EEGNet model, evaluate, and save the model.
+    train the EEGNet model, evaluate, save the model, and produce performance reports and plots.
     """
     # List of CSV file paths (make sure these files exist in the same directory or provide full paths)
     '''
@@ -378,8 +380,8 @@ def main():
     history = model.fit(
         X_train_full, y_train_full,
         validation_data=(X_test, y_test),  # Here we use the test set for validation.
-        epochs=50,
-        batch_size=8,
+        epochs=40,
+        batch_size=10,
         verbose=1
     )
     
@@ -387,14 +389,42 @@ def main():
     loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
     print(f"\nFinal Test Accuracy: {accuracy * 100:.2f}%")
     
-
+    # ----------------------------
+    # Generate the Classification Report Table
+    y_pred = model.predict(X_test)
+    y_pred_classes = np.argmax(y_pred, axis=1)
+    report = classification_report(y_test, y_pred_classes, output_dict=True)
+    report_df = pd.DataFrame(report).transpose()
+    
+    print("\nClassification Report:")
+    print(report_df.to_string())
+    
+    # ----------------------------
+    # Plot Learning Curves for Model Performance
+    
+    # Plot Training & Validation Accuracy
+    plt.figure(figsize=(8,6))
+    plt.plot(history.history['accuracy'], label='Train Accuracy')
+    plt.title('Model Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend(loc='upper left')
+    plt.grid(True)
+    plt.show()
+    
+    # Plot Training & Validation Loss
+    plt.figure(figsize=(8,6))
+    plt.plot(history.history['loss'], label='Train Loss')
+    plt.title('Model Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend(loc='upper left')
+    plt.grid(True)
+    plt.show()
     
     # Save the trained model to disk.
-    #model.save("eeg_model_new_passive_2.h5")
-    #print("Model saved as 'eeg_model_new_passive_2.h5'.")
-
-    model.save("eeg_model_new_active_2.h5")
-    print("Model saved as 'eeg_model_active_2.h5'.")
+    model.save("eeg_model_new_active_4.h5")
+    print("Model saved as 'eeg_model_active_4.h5'.")
 
 if __name__ == '__main__':
     # Optional: Disable oneDNN optimizations if needed.
