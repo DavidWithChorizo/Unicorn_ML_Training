@@ -22,7 +22,7 @@ os.makedirs(DATA_FOLDER, exist_ok=True)
 # ---------------------
 # File & Data Loading Functions
 # ---------------------
-def get_next_csv_filename(directory, base_name="adc", extension="csv"):
+def get_next_csv_filename(directory, base_name="adc_last", extension="csv"):
     """
     Returns the next available filename in the directory.
     E.g. If adc_data_1.csv exists, returns adc_data_2.csv, etc.
